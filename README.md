@@ -1,5 +1,5 @@
 # Transformers
-Implementation of different transformers or MSA based models. 
+Implementation of different transformers/MSA based architectures. 
 Additional models will be implemented.
 
 
