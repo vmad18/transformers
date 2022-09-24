@@ -61,21 +61,21 @@ class RelativePositionEmbedding(nn.Module):
 class MultiHeadAttention(Module):
 
     """
-    :param h - Heads
-    :param ed - Embedding/Hidden Dimension
-    :param dp - Dropout Rate
+    :param dims - Embedding/Hidden Dimension
+    :param heads - heads
+    :param dp - Dropout percentage
     """
 
-    def __init__(self, h: int, dim: int, dp: int) -> None:
+    def __init__(self, dims: int, heads: int, dp: int) -> None:
         super().__init__()
 
-        self.h = h
-        self.dim = dim
+        self.h = heads
+        self.dims = dims
         self.sh = self.dim // self.h
 
         self.drop = nn.Dropout(dp)
-        self.qkv = nn.Linear(self.dim, 3 * self.dim)
-        self.proj = nn.Linear(self.dim, self.dim)
+        self.qkv = nn.Linear(self.dims, 3 * self.dims)
+        self.proj = nn.Linear(self.dims, self.dims)
 
     def forward(self, x: Tensor, mask: Tensor = None) -> Tensor:
         wqkv = self.qkv(x).view(x.shape[0], x.shape[1], self.h, 3*self.sh).view(x.shape[0], x.shape[1], self.h, 3*self.sh).permute(0, 2, 1, 3).chunk(3, dim=-1)  # (qkv, bs, heads, seq, ed//3)
