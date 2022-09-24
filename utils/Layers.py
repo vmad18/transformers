@@ -115,7 +115,7 @@ class LocalAttention(Module):
         B, C, H, W = x.shape
         x = x.permute(0, 2, 3, 1)
 
-        x = self.qkv(x).view(x.shape[0], x.shape[1], x.shape[2], self.h, 3*self.pd).permute(0, 3, 1, 2, 4)
+        x = self.qkv(x).view(B, H, W, self.h, 3*self.pd).permute(0, 3, 1, 2, 4)
         x = x.view(B, self.h, H//self.ws, self.ws, W//self.ws, self.ws, 3*self.pd)
         x = x.permute(0, 1, 2, 4, 3, 5, 6)
         x = x.reshape(B, self.h, H//self.ws * W//self.ws, self.ws*self.ws, 3*self.pd).chunk(3, -1)
@@ -292,6 +292,6 @@ class PatchMerging(Module):
 if __name__ == "__main__":
     tnsr: Tensor = torch.randn((3, 56, 224, 224))
     la: LocalAttention = LocalAttention(56, 8, 7)
-    print(la(tnsr).shape)
+    print(la(tnsr))
     # pm = PatchMerging(48, resolution=(224//4, 224//4), partition=4)
     # pm2 = PatchMerging(96, resolution=(224//8, 224//8))
