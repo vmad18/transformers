@@ -61,6 +61,8 @@ class RelativePositionEmbedding(nn.Module):
 class MultiHeadAttention(Module):
 
     """
+    Performs self-attention (cosine similarity) across a set of heads.
+
     :param dims - Embedding/Hidden Dimension
     :param heads - heads
     :param dp - Dropout percentage
@@ -79,7 +81,8 @@ class MultiHeadAttention(Module):
 
     def forward(self, x: Tensor, mask: Tensor = None) -> Tensor:
         wqkv = self.qkv(x).view(x.shape[0], x.shape[1], self.h, 3*self.sh).view(x.shape[0], x.shape[1], self.h, 3*self.sh).permute(0, 2, 1, 3).chunk(3, dim=-1)  # (qkv, bs, heads, seq, ed//3)
-        wq, wk, wv = wqkv[0], wqkv[1], wqkv[2]
+
+        wq, wk, wv = wqkv
         attn: Tensor = (wq @ wk.transpose(-2, -1)) / np.sqrt(self.sh)  # (bs, heads, seq, seq)
 
         if not (mask is None):
@@ -94,6 +97,8 @@ class MultiHeadAttention(Module):
 class LocalAttention(Module):
 
     """
+    Performs self-attention across an mxm region.
+
     :param dims - input dimension
     :param heads - number of heads
     :param ws - window size of local attention
@@ -120,7 +125,7 @@ class LocalAttention(Module):
         x = x.permute(0, 1, 2, 4, 3, 5, 6)
         x = x.reshape(B, self.h, H//self.ws * W//self.ws, self.ws*self.ws, 3*self.pd).chunk(3, -1)
 
-        wq, wk, wv = x[0], x[1], x[2]
+        wq, wk, wv = x
         attn = (wq @ wk.transpose(-2, -1)) / np.sqrt(self.pd)
 
         if mask != null: attn += mask * -1e9

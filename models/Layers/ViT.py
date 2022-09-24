@@ -4,14 +4,14 @@ from utils.Layers import MultiHeadAttention, FFN
 
 class ViTEncoder(Module):
 
-    def __init__(self, ed: int = 512, h: int = 8, up: int = 2048, dp: int = .1) -> None:
+    def __init__(self, dims: int = 512, h: int = 8, up: int = 2048, dp: int = .1) -> None:
         super().__init__()
 
-        self.msa: MultiHeadAttention = MultiHeadAttention(h, ed, dp)
-        self.ffn = FFN(up, ed)
+        self.msa: MultiHeadAttention = MultiHeadAttention(dims, h, dp)
+        self.ffn = FFN(up, dims)
 
-        self.ln1 = nn.LayerNorm(ed, eps=1e-6)
-        self.ln2 = nn.LayerNorm(ed, eps=1e-6)
+        self.ln1 = nn.LayerNorm(dims, eps=1e-6)
+        self.ln2 = nn.LayerNorm(dims, eps=1e-6)
 
     def forward(self, x: Tensor) -> Tensor:
         skip = x
