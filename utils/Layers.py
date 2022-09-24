@@ -239,6 +239,9 @@ class WindowAttention(Module):
         attn = attn.view(attn.shape[0], attn.shape[1], self.resolution[0]//self.ws, self.resolution[1]//self.ws, self.ws, self.ws, attn.shape[4])
         attn = attn.permute(0, 2, 4, 3, 5, 1, 6)
         attn = attn.reshape(attn.shape[0], P, C) # (bs, h, w, dims)
+
+        if self.shifted:
+            attn = torch.roll(attn, (self.ws//2, self.ws//2), (1, 2))
         return self.proj(attn)
 
 
