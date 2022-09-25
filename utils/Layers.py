@@ -294,6 +294,30 @@ class PatchMerging(Module):
             return self.proj(x)
 
 
+class PositionalEncoding(Module):
+
+    """
+    :param dims - embedding/feature dimension of input
+    :param max_seq - max sequence length of the input
+    :param dp - dropout rate of the output to help the model vary the features extracted
+    """
+
+    def __init__(self, dims: int = 512, max_seq: int = 2048, dp: float = .1):
+        super().__init__()
+
+        self.dp = nn.Dropout(p=dp)
+
+        pos = torch.arange(0, max_seq).unsqueeze(1)
+        vals = torch.pow(1./1e4, torch.arange(0, dims, 2)/dims)
+
+        self.encodes = torch.zeros(max_seq, dims)
+        self.encodes[:, ::2] = torch.sin(pos * vals)
+        self.encodes[:, 1::2] = torch.cos(pos * vals)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.dp(x + x[:x.shape[0], :])
+
+
 if __name__ == "__main__":
     tnsr: Tensor = torch.randn((3, 56, 224, 224))
     la: LocalAttention = LocalAttention(56, 8, 7)
