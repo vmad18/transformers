@@ -16,7 +16,7 @@ class PatchEmbedding(Module):
         self.pos_embed = nn.Parameter(
             torch.randn(self.patches ** 2 + 1, self.ed))  # (patches + class token, embedding dim)
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.proj(x).permute(0, 2, 3, 1).view(-1, self.patches * self.patches, self.ed) # collapse dimensions (bs, patches * patches, embedding dim)
         cls = self.cls_token.repeat(x.shape[0], 1, 1)
         x = torch.cat([cls, x], dim=1)
@@ -29,6 +29,7 @@ class LocalPositionEmbedding(Module):
     """
     :param md - max distance
     """
+
     def __init__(self, md: int):
         super().__init__()
 
@@ -38,11 +39,12 @@ class LocalPositionEmbedding(Module):
         self.pos = torch.tensor(np.asarray([[p1, p2] for p1 in range(md) for p2 in range(md)]))
         self.dist_table = self.pos.unsqueeze(0) - self.pos.unsqueeze(1) + (md - 1)
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         x += self.param_dists[self.dist_table[:, :, 0].long(), self.dist_table[:, :, 1].long()] # works without .long() sometimes
         return x
 
 
+#TODO fix this
 class RelativePositionEmbedding(nn.Module):
 
     def __init__(self, heads, toks: int):
@@ -51,7 +53,7 @@ class RelativePositionEmbedding(nn.Module):
         self.toks = toks
         self.pos_embed = nn.Parameter(torch.randn(heads, toks * 2 - 1))
 
-    def forward(self):
+    def forward(self) -> Tensor:
         dists = torch.arange(self.toks)
         dists = dists.unsqueeze(0) - dists.unsqueeze(1) + self.max_relative_position-1
         embeds = self.pos_embed[:, dists]
@@ -229,7 +231,7 @@ class WindowAttention(Module):
         x = x.reshape(x.shape[0], x.shape[1], x.shape[2], x.shape[3], self.ws*self.ws, self.sh) # (bs, heads, h, w, windows*windows, dims)
         x = x.view(x.shape[0], x.shape[1], x.shape[2]*x.shape[3], self.ws*self.ws, self.sh).chunk(3, dim=-1) # (qkv, bs, heads, h*w, windows*windows, dims)
 
-        wq, wk, wv = x[0], x[1], x[2]
+        wq, wk, wv = x
         attn = (wq @ wk.transpose(3, 4)) / np.sqrt(self.sh)
 
         if self.shifted:
@@ -297,6 +299,9 @@ class PatchMerging(Module):
 class PositionalEncoding(Module):
 
     """
+    Fourier Theory as a means to add positional information to the parallel processing
+    of the transformer
+
     :param dims - embedding/feature dimension of input
     :param max_seq - max sequence length of the input
     :param dp - dropout rate of the output to help the model vary the features extracted
